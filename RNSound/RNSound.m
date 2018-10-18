@@ -18,14 +18,30 @@ static void * const PlayerItemKVOContext = (void*)&PlayerItemKVOContext;
 
 - (void)audioSessionChangeObserver:(NSNotification *)notification{
     NSDictionary* userInfo = notification.userInfo;
-    AVAudioSessionRouteChangeReason audioSessionRouteChangeReason = [userInfo[@"AVAudioSessionRouteChangeReasonKey"] longValue];
-    AVAudioSessionInterruptionType audioSessionInterruptionType   = [userInfo[@"AVAudioSessionInterruptionTypeKey"] longValue];
+    
+    AVAudioSessionRouteChangeReason audioSessionRouteChangeReason = [userInfo[AVAudioSessionRouteChangeReasonKey] longValue];
+    
     AVPlayer* player = [self playerForKey:self._key];
     if (audioSessionRouteChangeReason == AVAudioSessionRouteChangeReasonNewDeviceAvailable){
         if (player) {
             [player play];
         }
     }
+    
+    if (audioSessionRouteChangeReason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable){
+        if (player) {
+            [player pause];
+        }
+    }
+}
+
+- (void)handleInterruption:(NSNotification *)notification
+{
+    NSDictionary* userInfo = notification.userInfo;
+    
+    AVAudioSessionInterruptionType audioSessionInterruptionType   = [userInfo[AVAudioSessionInterruptionTypeKey] longValue];
+    AVPlayer* player = [self playerForKey:self._key];
+    
     if (audioSessionInterruptionType == AVAudioSessionInterruptionTypeEnded){
         NSUInteger option = [userInfo[AVAudioSessionInterruptionOptionKey] unsignedIntegerValue];
         
@@ -33,11 +49,7 @@ static void * const PlayerItemKVOContext = (void*)&PlayerItemKVOContext;
             [player play];
         }
     }
-    if (audioSessionRouteChangeReason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable){
-        if (player) {
-            [player pause];
-        }
-    }
+    
     if (audioSessionInterruptionType == AVAudioSessionInterruptionTypeBegan){
         if (player) {
             [player pause];
@@ -100,7 +112,7 @@ static void * const PlayerItemKVOContext = (void*)&PlayerItemKVOContext;
 }
 
 -(void) audioPlayerDidFinishPlayingItem:(AVPlayerItem *)playerItem
-                       successfully:(BOOL)flag {
+                           successfully:(BOOL)flag {
     
     NSNumber* key = [self keyForPlayerWithItem:playerItem];
     if (key == nil) return;
@@ -293,6 +305,7 @@ RCT_EXPORT_METHOD(prepare:(NSString*)fileName
 RCT_EXPORT_METHOD(play:(nonnull NSNumber*)key withCallback:(RCTResponseSenderBlock)callback) {
     [[AVAudioSession sharedInstance] setActive:YES error:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(audioSessionChangeObserver:) name:AVAudioSessionRouteChangeNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleInterruption:) name:AVAudioSessionInterruptionNotification object:nil];
     self._key = key;
     AVPlayer* player = [self playerForKey:key];
     if (player) {
