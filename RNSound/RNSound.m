@@ -20,14 +20,16 @@ static void * const PlayerItemKVOContext = (void*)&PlayerItemKVOContext;
     NSDictionary* userInfo = notification.userInfo;
     AVAudioSessionRouteChangeReason audioSessionRouteChangeReason = [userInfo[@"AVAudioSessionRouteChangeReasonKey"] longValue];
     AVAudioSessionInterruptionType audioSessionInterruptionType   = [userInfo[@"AVAudioSessionInterruptionTypeKey"] longValue];
-    AVAudioPlayer* player = [self playerForKey:self._key];
+    AVPlayer* player = [self playerForKey:self._key];
     if (audioSessionRouteChangeReason == AVAudioSessionRouteChangeReasonNewDeviceAvailable){
         if (player) {
             [player play];
         }
     }
     if (audioSessionInterruptionType == AVAudioSessionInterruptionTypeEnded){
-        if (player && player.isPlaying) {
+        NSUInteger option = [userInfo[AVAudioSessionInterruptionOptionKey] unsignedIntegerValue];
+        
+        if (player && (option == AVAudioSessionInterruptionOptionShouldResume)) {
             [player play];
         }
     }
