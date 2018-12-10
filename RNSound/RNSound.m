@@ -273,7 +273,7 @@ RCT_EXPORT_METHOD(prepare:(NSString*)fileName
         switch (status) {
             case AVPlayerItemStatusReadyToPlay:
             {
-                NSDictionary *response = @{@"duration": @(CMTimeGetSeconds(playerItem.duration)),
+                NSDictionary *response = @{@"duration": [self dictionaryValueForCMTime:playerItem.duration],
                                            @"numberOfChannels": @(0)};
                 
                 if (callback) {
@@ -382,10 +382,21 @@ RCT_EXPORT_METHOD(getCurrentTime:(nonnull NSNumber*)key
                   withCallback:(RCTResponseSenderBlock)callback) {
     AVPlayer* player = [self playerForKey:key];
     if (player) {
-        callback(@[@(CMTimeGetSeconds(player.currentItem.currentTime)), @(player.timeControlStatus == AVPlayerTimeControlStatusPlaying)]);
+        callback(@[[self dictionaryValueForCMTime:player.currentItem.currentTime], @(player.timeControlStatus == AVPlayerTimeControlStatusPlaying)]);
     } else {
         callback(@[@(-1), @(false)]);
     }
+}
+
+- (id)dictionaryValueForCMTime:(CMTime)time
+{
+    Float64 seconds = CMTimeGetSeconds(time);
+    
+    if (isnan(seconds) || isinf(seconds)) {
+        return [NSNull null];
+    }
+    
+    return @(seconds);
 }
 
 + (BOOL)requiresMainQueueSetup
