@@ -359,7 +359,11 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
 
     MediaPlayer player = this.playerPool.get(key);
     if (player != null) {
-      player.setPlaybackParams(player.getPlaybackParams().setSpeed(speed));
+      try {
+        player.setPlaybackParams(player.getPlaybackParams().setSpeed(speed));
+      } catch (IllegalArgumentException e){
+        Log.w("RNSoundModule", "setSpeed wrong speed playback params");
+      }
     }
   }
 
