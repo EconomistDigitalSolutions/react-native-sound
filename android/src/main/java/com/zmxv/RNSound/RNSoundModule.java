@@ -2,11 +2,12 @@ package com.zmxv.RNSound;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.net.Uri;
-import android.media.AudioManager;
+import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -15,15 +16,14 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableMapKeySetIterator;
+import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.modules.core.ExceptionsManagerModule;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.IOException;
-
-import android.util.Log;
 
 public class RNSoundModule extends ReactContextBaseJavaModule implements AudioManager.OnAudioFocusChangeListener {
   Map<Double, MediaPlayer> playerPool = new HashMap<>();
@@ -54,7 +54,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
 
   @ReactMethod
   public void prepare(final String fileName, final Double key, final ReadableMap options, final Callback callback) {
-    MediaPlayer player = createMediaPlayer(fileName);
+    MediaPlayer player = createMediaPlayer(fileName, options);
     if (player == null) {
       WritableMap e = Arguments.createMap();
       e.putInt("code", -1);
@@ -145,7 +145,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
     }
   }
 
-  protected MediaPlayer createMediaPlayer(final String fileName) {
+  protected MediaPlayer createMediaPlayer(final String fileName, final ReadableMap options) {
     int res = this.context.getResources().getIdentifier(fileName, "raw", this.context.getPackageName());
     MediaPlayer mediaPlayer = new MediaPlayer();
     if (res != 0) {
@@ -163,8 +163,13 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
     if (fileName.startsWith("http://") || fileName.startsWith("https://")) {
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
       Log.i("RNSoundModule", fileName);
+      Map<String, String> headerMap = null;
+      if (options != null && options.getMap("headers") != null){
+        headerMap = toStringMap(options.getMap("headers"));
+      }
+
       try {
-        mediaPlayer.setDataSource(fileName);
+        mediaPlayer.setDataSource(this.context, Uri.parse( fileName ), headerMap);
       } catch(IOException e) {
         Log.e("RNSoundModule", "Exception", e);
         return null;
@@ -439,5 +444,23 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
     final Map<String, Object> constants = new HashMap<>();
     constants.put("IsAndroid", true);
     return constants;
+  }
+
+  private Map<String, String> toStringMap(ReadableMap readableMap) {
+    Map<String, String> map = new HashMap<>();
+    ReadableMapKeySetIterator iterator = readableMap.keySetIterator();
+
+    while (iterator.hasNextKey()) {
+      String key = iterator.nextKey();
+      ReadableType type = readableMap.getType(key);
+
+      switch (type) {
+        case String:
+          map.put(key, readableMap.getString(key));
+          break;
+      }
+    }
+
+    return map;
   }
 }
