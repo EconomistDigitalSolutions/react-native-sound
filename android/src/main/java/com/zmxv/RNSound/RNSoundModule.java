@@ -164,7 +164,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
       Log.i("RNSoundModule", fileName);
       Map<String, String> headerMap = null;
-      if (options != null && options.getMap("headers") != null){
+      if (options != null && options.hasKey("headers")&& options.getMap("headers") != null){
         headerMap = toStringMap(options.getMap("headers"));
       }
 
