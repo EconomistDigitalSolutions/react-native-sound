@@ -238,7 +238,7 @@ RCT_EXPORT_METHOD(prepare:(NSString*)fileName
     NSError* error;
     NSURL* fileNameUrl = [NSURL URLWithString:fileName];
     NSMutableDictionary * headers = [NSMutableDictionary dictionary];
-    if (options && options[@"headers"] != [NSNull null]){
+    if (options && options[@"headers"] && options[@"headers"] != [NSNull null]){
         headers = options[@"headers"];
     }
     
