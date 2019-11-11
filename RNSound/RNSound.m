@@ -237,7 +237,12 @@ RCT_EXPORT_METHOD(prepare:(NSString*)fileName
                   withCallback:(RCTResponseSenderBlock)callback) {
     NSError* error;
     NSURL* fileNameUrl = [NSURL URLWithString:fileName];
-    AVAsset *asset = [AVAsset assetWithURL:fileNameUrl];
+    NSMutableDictionary * headers = [NSMutableDictionary dictionary];
+    if (options && options[@"headers"] && options[@"headers"] != [NSNull null]){
+        headers = options[@"headers"];
+    }
+    
+    AVURLAsset * asset = [AVURLAsset URLAssetWithURL:fileNameUrl options:@{@"AVURLAssetHTTPHeaderFieldsKey" : headers}];
     AVPlayerItem *playerItem = [[AVPlayerItem alloc] initWithAsset:asset automaticallyLoadedAssetKeys:@[@"duration"]];
     
     NSKeyValueObservingOptions observingOptions = NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew;
